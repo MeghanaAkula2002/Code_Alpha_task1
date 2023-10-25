@@ -1,0 +1,66 @@
+import sqlite3
+import hashlib
+
+
+conn = sqlite3.connect('user_database.db')
+cursor = conn.cursor()
+
+# Create a table to store user information
+cursor.execute('''
+    CREATE TABLE IF NOT EXISTS users (
+        username TEXT PRIMARY KEY,
+        password TEXT
+    )
+''')
+conn.commit()
+
+
+def register_user(username, password):
+    password_hash = hashlib.sha256(password.encode()).hexdigest()
+    try:
+        cursor.execute('INSERT INTO users (username, password) VALUES (?, ?)', (username, password_hash))
+        conn.commit()
+        print("Registration successful.")
+    except sqlite3.IntegrityError:
+        print("Username already exists. Please choose a different one.")
+
+
+def login_user(username, password):
+    password_hash = hashlib.sha256(password.encode()).hexdigest()
+    cursor.execute('SELECT * FROM users WHERE username = ? AND password = ?', (username, password_hash))
+    user = cursor.fetchone()
+    if user:
+        print("Login successful.")
+        return True
+    else:
+        print("Login failed. Invalid username or password.")
+        return False
+
+
+def secured_page():
+    print("Welcome to the secured page!")
+
+
+while True:
+    print("\nMenu:")
+    print("1. Register")
+    print("2. Login")
+    print("3. Exit")
+    choice = input("Enter your choice (1/2/3): ")
+
+    if choice == '1':
+        username = input("Enter a username: ")
+        password = input("Enter a password: ")
+        register_user(username, password)
+    elif choice == '2':
+        username = input("Enter your username: ")
+        password = input("Enter your password: ")
+        if login_user(username, password):
+            secured_page()
+    elif choice == '3':
+        break
+    else:
+        print("Invalid choice. Please choose 1, 2, or 3.")
+
+
+conn.close()
